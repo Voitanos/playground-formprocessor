@@ -12,8 +12,8 @@ on:
 
 env:
   # app insights app/api used to indicate deployment
-  # TOTALVIEW_AZURE_APPINSIGHTS_APPID: <secret>
-  # TOTALVIEW_AZURE_APPINSIGHTS_APPKEY: <secret>
+  PLAYGROUND_AZURE_APPINSIGHTS_APPID: a9cbc1ce-0afc-4732-99f5-1927d4c3cba1
+  PLAYGROUND_AZURE_APPINSIGHTS_APPKEY: h66cl408ch83hk3cwmv5706f1tqrypxfpk45hleb
 
   # function app settings
   # AZURE_FUNCTIONAPP_RESOURCEGROUP: <secret>
@@ -21,9 +21,9 @@ env:
   AZURE_FUNCTION_APP_STAGING_DEPLOYMENT_SLOT: staging
 
   # credentials for bot with contributor rights on resource group
-  # TOTALVIEW_BOT_AZURE_TENANTID: <secret>
-  # TOTALVIEW_BOT_AZURE_CLIENTID: <secret>
-  # TOTALVIEW_BOT_AZURE_CLIENTSECRET: <secret>
+  # PLAYGROUND_BOT_AZURE_TENANTID: <secret>
+  # PLAYGROUND_BOT_AZURE_CLIENTID: <secret>
+  # PLAYGROUND_BOT_AZURE_CLIENTSECRET: <secret>
 
 #
 # 1. deploy the release
@@ -41,9 +41,9 @@ jobs:
       - name: Login to Azure
         run: az login --service-principal --tenant $BOT_TENANT_ID --username $BOT_CLIENT_ID --password $BOT_CLIENT_SECRET
         env:
-          BOT_TENANT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_TENANTID }}
-          BOT_CLIENT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTID }}
-          BOT_CLIENT_SECRET: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTSECRET }}
+          BOT_TENANT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_TENANTID }}
+          BOT_CLIENT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_CLIENTID }}
+          BOT_CLIENT_SECRET: ${{ secrets.PLAYGROUND_BOT_AZURE_CLIENTSECRET }}
 
       ######################################################################
       # update azure function app setting to commit hash
@@ -68,9 +68,9 @@ jobs:
       - name: Login to Azure
         run: az login --service-principal --tenant $BOT_TENANT_ID --username $BOT_CLIENT_ID --password $BOT_CLIENT_SECRET
         env:
-          BOT_TENANT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_TENANTID }}
-          BOT_CLIENT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTID }}
-          BOT_CLIENT_SECRET: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTSECRET }}
+          BOT_TENANT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_TENANTID }}
+          BOT_CLIENT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_CLIENTID }}
+          BOT_CLIENT_SECRET: ${{ secrets.PLAYGROUND_BOT_AZURE_CLIENTSECRET }}
 
       ######################################################################
       # swap deployment slots
@@ -95,8 +95,8 @@ jobs:
       - name: Annotate deployment to Azure Application Insights
         uses: wictorwilen/application-insights-action@v1
         with:
-          applicationId: ${{ secrets.TOTALVIEW_AZURE_APPINSIGHTS_APPID }}
-          apiKey: ${{ secrets.TOTALVIEW_AZURE_APPINSIGHTS_APPKEY }}
+          applicationId: ${{ secrets.PLAYGROUND_AZURE_APPINSIGHTS_APPID }}
+          apiKey: ${{ secrets.PLAYGROUND_AZURE_APPINSIGHTS_APPKEY }}
           releaseName: Deployed v${{ github.event.release.tag_name }}
           message: Swapped staging & production slots
           actor: ${{ github.actor }}
