@@ -2,9 +2,10 @@ import {
   AzureFunction,
   Context,
   HttpRequest
-} from "@azure/functions"
-import * as AppInsights from "applicationinsights";
-import { parse, ParsedQs } from "qs";
+} from '@azure/functions'
+import * as AppInsights from 'applicationinsights';
+import { parse, ParsedQs } from 'qs';
+import { v4 as guid } from 'uuid';
 
 const EVENT_SOURCE = 'FORM_HANDLER';
 
@@ -44,7 +45,11 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     });
 
     // write it to the queue
-    context.bindings['outputQueueItem'] = parsedData;
+    context.bindings['outputQueueItem'] = {
+      'PartitionKey': form_id,
+      'RowKey': guid(),
+      'FormInputs': { ...parsedData }
+    };
 
     context.res = {
       status: 200,
