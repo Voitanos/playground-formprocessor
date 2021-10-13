@@ -54,7 +54,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
 
     AppInsights.defaultClient.trackEvent({
       name: 'Queued form submission',
-      properties {
+      properties: {
         source: EVENT_SOURCE,
         form_id: form_id,
         message: JSON.stringify(queueMessage)
