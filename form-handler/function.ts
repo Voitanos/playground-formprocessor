@@ -45,11 +45,21 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     });
 
     // write it to the queue
-    context.bindings['outputQueueItem'] = {
+    const queueMessage = {
       'PartitionKey': form_id,
       'RowKey': guid(),
       'FormInputs': { ...parsedData }
     };
+    context.bindings['outputQueueItem'] = queueMessage;
+
+    AppInsights.defaultClient.trackEvent({
+      name: 'Queued form submission',
+      properties {
+        source: EVENT_SOURCE,
+        form_id: form_id,
+        message: JSON.stringify(queueMessage)
+      }
+    });
 
     context.res = {
       status: 200,
