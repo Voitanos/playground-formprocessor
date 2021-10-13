@@ -1,0 +1,223 @@
+######################################################################
+# Build, test & deploy the Azure Function app on pushes to master.
+######################################################################
+name: Staging build, test & deploy app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+    paths-ignore:
+      - '**/**.md'
+
+env:
+  NODE_VERSION: '14.x'
+
+  # all Azure Functions are at the root of the project
+  AZURE_FUNCTION_APP_PACKAGE_PATH: ''
+
+  # function app settings
+  # AZURE_FUNCTIONAPP_SUBSCRIPTIONID: <secret>
+  # AZURE_FUNCTIONAPP_RESOURCEGROUP: <secret>
+  # AZURE_FUNCTIONAPP_NAME: <secret>
+  AZURE_FUNCTION_APP_DEPLOYMENT_SLOT: staging
+
+  # credentials for bot with contributor rights on resource group
+  # TOTALVIEW_BOT_AZURE_TENANTID: <secret>
+  # TOTALVIEW_BOT_AZURE_CLIENTID: <secret>
+  # TOTALVIEW_BOT_AZURE_CLIENTSECRET: <secret>
+
+jobs:
+  test:
+    if: "!contains(github.event.head_commit.message,'[skip-ci]')"
+    name: Run all tests
+    runs-on: ubuntu-latest
+    steps:
+      ######################################################################
+      # checkout full codebase
+      ######################################################################
+      - name: Checkout repo codebase
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+          clean: true
+          submodules: false
+
+      ######################################################################
+      # configure Node.js
+      ######################################################################
+      - name: Setup Node ${{ env.NODE_VERSION }} environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      ######################################################################
+      # restore cached dependencies
+      ######################################################################
+      - name: Restore cached dependencies
+        uses: actions/cache@v2
+        id: node_module_cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ env.NODE_VERSION }}-node_modules-${{ hashFiles('package-lock.json') }}
+
+      ######################################################################
+      # install dependencies (if restore cached deps failed)
+      ######################################################################
+      - name: Install dependencies
+        if: steps.node_module_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm install
+          popd
+
+      ######################################################################
+      # build project
+      ######################################################################
+      - name: Build project
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm run build --if-present
+          popd
+
+      ######################################################################
+      # run tests
+      ######################################################################
+      - name: Run all tests
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm run prep --if-present
+          npm test --verbose
+          popd
+
+      ######################################################################
+      # save test output
+      ######################################################################
+      - name: Save code coverage results (report)
+        uses: actions/upload-artifact@v1
+        with:
+          name: COVERAGE_REPORT
+          path: temp/lcov-report
+
+  deploy:
+    if: "!contains(github.event.head_commit.message,'[skip-cd]')"
+    name: Deploy to Azure Function app staging slot
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      ######################################################################
+      # checkout full codebase
+      ######################################################################
+      - name: Checkout repo codebase
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+          clean: true
+          submodules: false
+
+      ######################################################################
+      # configure Node.js
+      ######################################################################
+      - name: Setup Node ${{ env.NODE_VERSION }} environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      ######################################################################
+      # restore cached dependencies
+      ######################################################################
+      - name: Restore cached dependencies
+        uses: actions/cache@v2
+        id: node_module_cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ env.NODE_VERSION }}-node_modules-${{ hashFiles('package-lock.json') }}
+
+      ######################################################################
+      # install dependencies (if restore cached deps failed)
+      ######################################################################
+      - name: Install dependencies
+        if: steps.node_module_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm install
+          popd
+        env:
+          APP_PACAKGE_PATH: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
+
+      ######################################################################
+      # build project
+      ######################################################################
+      - name: Build project
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm run build --if-present
+          popd
+        env:
+          APP_PACAKGE_PATH: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
+
+      ######################################################################
+      # purge all non-production dependencies
+      ######################################################################
+      - name: Purge non-production dependencies
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm prune --production
+          popd
+        env:
+          APP_PACAKGE_PATH: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
+
+      ######################################################################
+      # login to Azure CLI via service principal
+      ######################################################################
+      - name: Login to Azure
+        run: az login --service-principal --tenant $BOT_TENANT_ID --username $BOT_CLIENT_ID --password $BOT_CLIENT_SECRET
+        env:
+          BOT_TENANT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_TENANTID }}
+          BOT_CLIENT_ID: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTID }}
+          BOT_CLIENT_SECRET: ${{ secrets.TOTALVIEW_BOT_AZURE_CLIENTSECRET }}
+
+      ######################################################################
+      # acquire publish profile for Azure Functions App
+      ######################################################################
+      - name: Download Azure Function app publishing profile
+        id: az_funcapp_publishing_profile
+        run: |
+          CMD_PUB_PROFILE=$(az functionapp deployment list-publishing-profiles --subscription $AZURE_SUBSCRIPTION_ID --resource-group $FUNCTION_APP_RESOURCE_GROUP --name $FUNCTION_APP_NAME --slot $FUNCTION_APP_DEPLOYMENT_SLOT --xml)
+          echo "::set-output name=slot_pub_profile::${CMD_PUB_PROFILE}"
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_FUNCTIONAPP_SUBSCRIPTIONID }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ secrets.AZURE_FUNCTIONAPP_RESOURCEGROUP }}
+          FUNCTION_APP_NAME: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+          FUNCTION_APP_DEPLOYMENT_SLOT: ${{ env.AZURE_FUNCTION_APP_DEPLOYMENT_SLOT }}
+
+      ######################################################################
+      # deploy function app
+      ######################################################################
+      - name: Deploy Azure Functions app
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+          package: '.'
+          publish-profile: ${{ steps.az_funcapp_publishing_profile.outputs.slot_pub_profile }}
+          respect-funcignore: true
+
+      ######################################################################
+      # update azure function app setting to commit hash
+      ######################################################################
+      - name: Set Azure Function app's app setting "APP_VERSION" & "COMMIT_HASH"
+        run: |
+          az functionapp config appsettings set --resource-group $FUNCTION_APP_RESOURCE_GROUP --name $FUNCTION_APP_NAME --slot $FUNCTION_APP_DEPLOYMENT_SLOT --slot-settings "APP_VERSION=$SLOT_SETTING__APP_VERSION" "COMMIT_HASH=$SLOT_SETTING__COMMIT_HASH"
+        env:
+          FUNCTION_APP_RESOURCE_GROUP: ${{ secrets.AZURE_FUNCTIONAPP_RESOURCEGROUP }}
+          FUNCTION_APP_NAME: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+          FUNCTION_APP_DEPLOYMENT_SLOT: ${{ env.AZURE_FUNCTION_APP_DEPLOYMENT_SLOT }}
+          SLOT_SETTING__APP_VERSION: staging
+          SLOT_SETTING__COMMIT_HASH: ${{ github.sha }}

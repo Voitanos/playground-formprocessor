@@ -1,0 +1,11 @@
+*.js.map
+*.md
+*.ts
+*.spec.*
+.git*
+.vscode
+docs
+local.settings.json
+temp
+tsconfig.json
+wallaby.config.js

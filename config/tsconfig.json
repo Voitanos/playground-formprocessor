@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "lib": [
+      "es5",
+      "es6",
+      "dom",
+      "es2015.collection"
+    ],
+    "sourceMap": false,
+    "noImplicitAny": false,
+    "strict": true,
+    "moduleResolution": "node",
+    "typeRoots": ["../node_modules/@types"],
+    "esModuleInterop": true
+ },
+  "include": [
+    "./*"
+  ]
+}

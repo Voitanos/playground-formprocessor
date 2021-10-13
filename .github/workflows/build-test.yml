@@ -1,0 +1,93 @@
+######################################################################
+# Build & test the Azure Function app on pushes, except to master.
+######################################################################
+name: Build app & run all tests
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - development
+    paths-ignore:
+      - '**/**.md'
+      - 'docs'
+
+env:
+  NODE_VERSION: '14.x'
+
+  # all Azure Functions are at the root of the project
+  AZURE_FUNCTION_APP_PACKAGE_PATH: ''
+
+jobs:
+  test:
+    if: "!contains(github.event.head_commit.message,'[skip-ci]')"
+    name: Build app & run all tests
+    runs-on: ubuntu-latest
+    steps:
+      ######################################################################
+      # checkout full codebase
+      ######################################################################
+      - name: Checkout repo codebase
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+          clean: true
+          submodules: false
+
+      ######################################################################
+      # configure Node.js
+      ######################################################################
+      - name: Setup Node ${{ env.NODE_VERSION }} environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      ######################################################################
+      # restore cached dependencies
+      ######################################################################
+      - name: Restore cached dependencies
+        uses: actions/cache@v2
+        id: node_module_cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ env.NODE_VERSION }}-node_modules-${{ hashFiles('package-lock.json') }}
+
+      ######################################################################
+      # install dependencies (if restore cached deps failed)
+      ######################################################################
+      - name: Install dependencies
+        if: steps.node_module_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm ci
+          popd
+
+      ######################################################################
+      # build project
+      ######################################################################
+      - name: Build project
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm run build --if-present
+          popd
+
+      ######################################################################
+      # run tests
+      ######################################################################
+      - name: Run all tests
+        run: |
+          pushd './${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}'
+          npm run prep --if-present
+          npm test --verbose
+          popd
+
+      ######################################################################
+      # save test output
+      ######################################################################
+      - name: Save code coverage results (report)
+        uses: actions/upload-artifact@v1
+        with:
+          name: COVERAGE_REPORT
+          path: temp/lcov-report
