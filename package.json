@@ -1,7 +1,7 @@
 {
-  "name": "playground-formprocessor",
+  "name": "voitanos-form-handler",
   "version": "1.0.0",
-  "description": "",
+  "description": "Processes form submissions submitted from Voitanos.io",
   "scripts": {
     "build": "tsc --project ./tsconfig.json",
     "build:watch": "tsc -w",

@@ -1,6 +1,6 @@
-# Playground - Form Processor
+# From Processor
 
-Handles processing of forms no Vointaos.io.
+Handles processing of forms on Vointaos.io.
 
 ## Azure Functions in this project
 
@@ -8,9 +8,17 @@ Handles processing of forms no Vointaos.io.
 
 Used to ensure the function app has deployed.
 
-### [Form handler(./form-handler)
+### [Enqueue Submissions(./enqueue-submissions)
 
-Receives all form submissions from Voitanos.io
+Receives all form submissions from Voitanos.io & saves them to the specified Azure Storage Queue.
+
+The queue the form submission is saved to is defined by the `formid` in the URL: `https://url/enqueue-submissions/formid`. In this case, the submission is saved to the queue `formid`.
+
+### Response & redirection
+
+If the form fields include one named `redirectUrl`, when the form is successfully submitted, the function responds with `HTTP 308` & includes this URL in the `Location` header of the response.
+
+Otherwise, if there's no field is set, the response is `HTTP 200 OK`
 
 ## Deployment
 

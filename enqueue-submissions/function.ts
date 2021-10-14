@@ -7,7 +7,7 @@ import * as AppInsights from 'applicationinsights';
 import { parse, ParsedQs } from 'qs';
 import { v4 as guid } from 'uuid';
 
-const EVENT_SOURCE = 'FORM_HANDLER';
+const EVENT_SOURCE = 'ENQUEUE_SUBMISSIONS';
 
 /**
  * Azure Function
@@ -29,6 +29,8 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
 
     // get the body of the payload
     const parsedData: ParsedQs = parse(req.rawBody);
+    // split out form data from redirect path
+    const { redirectUrl, ...formData } = parsedData;
 
     // get the form ID
     const form_id = req.params['formid'].toLowerCase();
@@ -48,7 +50,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     const queueMessage = {
       'PartitionKey': form_id,
       'RowKey': guid(),
-      'FormInputs': { ...parsedData }
+      'FormInputs': { ...formData }
     };
     context.bindings['outputQueueItem'] = queueMessage;
 
@@ -61,10 +63,21 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
       }
     });
 
-    context.res = {
-      status: 200,
-      body: 'OK'
-    };
+    // if redirect received, send redirect
+    if ( redirectUrl ){
+      context.res = {
+        status: 308,
+        headers: {
+          location: redirectUrl
+        },
+        body: {}
+      }
+    } else {
+      context.res = {
+        status: 200,
+        body: 'OK'
+      };
+    }
     context.done();
   } catch (error) {
     // track error

@@ -1,11 +1,11 @@
 {
   "bindings": [
     {
-      "authLevel": "function",
+      "authLevel": "anonymous",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "route": "form-handler/{formid:alpha}",
+      "route": "enqueue-submissions/{formid:alpha}",
       "methods": [
         "post"
       ]
@@ -23,5 +23,5 @@
       "connection": "submissions01_STORAGE"
     }
   ],
-  "scriptFile": "../dist/form-handler/index.js"
+  "scriptFile": "../dist/enqueue-submissions/index.js"
 }
