@@ -66,7 +66,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     // if redirect received, send redirect
     if ( redirectUrl ){
       context.res = {
-        status: 308,
+        status: 301,
         headers: {
           location: redirectUrl
         },
