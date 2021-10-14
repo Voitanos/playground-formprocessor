@@ -33,7 +33,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     const { redirectUrl, ...formData } = parsedData;
 
     // get the form ID
-    const form_id = req.params['formid'].toLowerCase();
+    const form_id = req.params['formid'];
 
     // trace the request
     AppInsights.defaultClient.trackTrace({
