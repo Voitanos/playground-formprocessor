@@ -21,6 +21,20 @@
       "name": "outputQueueItem",
       "queueName": "homeworksubmissions01",
       "connection": "submissions01_STORAGE"
+    },
+    {
+      "type": "queue",
+      "direction": "out",
+      "name": "course-homework",
+      "queueName": "course-homework-responses",
+      "connection": "submissions01_STORAGE"
+    },
+    {
+      "type": "queue",
+      "direction": "out",
+      "name": "generic",
+      "queueName": "generic-responses",
+      "connection": "submissions01_STORAGE"
     }
   ],
   "scriptFile": "../dist/enqueue-submissions/index.js"

@@ -52,7 +52,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
       'RowKey': guid(),
       'FormInputs': { ...formData }
     };
-    context.bindings['outputQueueItem'] = queueMessage;
+    context.bindings[form_id] = queueMessage;
 
     AppInsights.defaultClient.trackEvent({
       name: 'Queued form submission',
