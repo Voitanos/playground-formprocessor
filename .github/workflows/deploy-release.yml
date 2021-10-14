@@ -38,7 +38,7 @@ jobs:
       ######################################################################
       # login to Azure CLI via service principal
       ######################################################################
-      - name: Login to Azure
+      - name: 🔑 Login to Azure
         run: az login --service-principal --tenant $BOT_TENANT_ID --username $BOT_CLIENT_ID --password $BOT_CLIENT_SECRET
         env:
           BOT_TENANT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_TENANTID }}
@@ -48,7 +48,7 @@ jobs:
       ######################################################################
       # update azure function app setting to commit hash
       ######################################################################
-      - name: Set Azure Function app's app setting "APP_VERSION" & "COMMIT_HASH"
+      - name: 📄 Set Azure Function app's app setting "APP_VERSION" & "COMMIT_HASH"
         run: |
           az functionapp config appsettings set --resource-group $FUNCTION_APP_RESOURCE_GROUP --name $FUNCTION_APP_NAME --slot-settings "APP_VERSION=$SLOT_SETTING__APP_VERSION" "COMMIT_HASH=$SLOT_SETTING__COMMIT_HASH"
         env:
@@ -65,7 +65,7 @@ jobs:
       ######################################################################
       # login to Azure CLI via service principal
       ######################################################################
-      - name: Login to Azure
+      - name: 🔑 Login to Azure
         run: az login --service-principal --tenant $BOT_TENANT_ID --username $BOT_CLIENT_ID --password $BOT_CLIENT_SECRET
         env:
           BOT_TENANT_ID: ${{ secrets.PLAYGROUND_BOT_AZURE_TENANTID }}
@@ -75,7 +75,7 @@ jobs:
       ######################################################################
       # swap deployment slots
       ######################################################################
-      - name: Swap staging & production deployment slot
+      - name: 🔀 Swap staging & production deployment slot
         run: |
           az functionapp deployment slot swap --resource-group $FUNCTION_APP_RESOURCE_GROUP --name $FUNCTION_APP_NAME --slot $FUNCTION_APP_STAGING_SLOT --target-slot $FUNCTION_APP_PRODUCTION_SLOT
         env:
@@ -92,7 +92,7 @@ jobs:
       ######################################################################
       # add release annotation to Azure App Insights
       ######################################################################
-      - name: Annotate deployment to Azure Application Insights
+      - name: 📄 Annotate deployment to Azure Application Insights
         uses: wictorwilen/application-insights-action@v1
         with:
           applicationId: ${{ secrets.PLAYGROUND_AZURE_APPINSIGHTS_APPID }}

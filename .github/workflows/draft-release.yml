@@ -15,7 +15,7 @@ jobs:
       ######################################################################
       # get the tag name
       ######################################################################
-      - name: Get tag from the push
+      - name: 🏷 Get tag from the push
         id: set_variables
         run: |
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
@@ -23,7 +23,7 @@ jobs:
       ######################################################################
       # create a new draft release
       ######################################################################
-      - name: Create new draft release
+      - name: 𖭦 Create new draft release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
