@@ -25,7 +25,7 @@
     {
       "type": "queue",
       "direction": "out",
-      "name": "course-homework",
+      "name": "courseHomework",
       "queueName": "course-homework-responses",
       "connection": "submissions01_STORAGE"
     },
